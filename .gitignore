@@ -15,8 +15,8 @@
 /.rustup/
 /.ssh/
 /.x
+/.vscode
 /bench
 /env.sh
 /go/
 /local/
-
