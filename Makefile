@@ -27,13 +27,9 @@ mysql-deploy:
 
 mysql-rotate:
 	ssh isu13-1 "sudo rm -f /var/log/mysql/mysql-slow.log"
-	ssh isucon13-2 "sudo rm -f /var/log/mysql/mysql-slow.log"
-	ssh isucon13-3 "sudo rm -f /var/log/mysql/mysql-slow.log"
 
 mysql-restart:
 	ssh isu13-1 "sudo systemctl restart mysql.service"
-	ssh isucon13-2 "sudo systemctl restart mysql.service"
-	ssh isucon13-3 "sudo systemctl restart mysql.service"
 
 nginx-deploy:
 	ssh isu13-1 "sudo dd of=/etc/nginx/nginx.conf" < ./etc/nginx/nginx.conf
@@ -54,14 +50,8 @@ bench:
 		cd /home/isucon/bench; \
 		./bench -target-addr 172.31.41.209:443"
 
-pt-query-digest-1:
+pt-query-digest:
 	ssh isu13-1 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
-
-pt-query-digest-2:
-	ssh isucon13-2 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
-
-pt-query-digest-3:
-	ssh isucon13-3 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
 
 ALPSORT=sum
 # /api/livestream/7508/report
