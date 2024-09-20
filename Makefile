@@ -54,19 +54,21 @@ pt-query-digest:
 	ssh isu13-1 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
 
 ALPSORT=sum
-# /api/livestream/7508/report
 # /api/user/mikakosasaki0/icon
+# /api/user/jtakahashi0/theme
+# /api/user/iyamamoto1/livestream
+# /api/user/suzukitsubasa0/statistics
+# /api/livestream/search?tag=%E6%98%A0%E7%94%BB%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC
+# /api/livestream/7497
+# /api/livestream/7508/report
 # /api/livestream/7515/ngwords
 # /api/livestream/7508/reaction
 # /api/livestream/7510/livecomment/1004/report
 # /api/livestream/7497/exit
 # /api/livestream/7497/enter
-# /api/user/jtakahashi0/theme
 # /api/livestream/7510/livecomment
-# /api/livestream/7497
-# /api/user/suzukitsubasa0/statistics
-# /api/livestream/search?tag=%E6%98%A0%E7%94%BB%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC
-ALPM=/api/livestream/[0-9]+/report,/api/user/[0-9a-zA-Z]+/icon,/api/livestream/[0-9]+/ngwords,/api/livestream/[0-9]+/reaction,/api/livestream/[0-9]+/livecomment/[0-9]+/report,/api/livestream/[0-9]+/exit,/api/livestream/[0-9]+/enter,/api/user/[0-9a-zA-Z]+/theme,/api/livestream/[0-9]+/livecomment,/api/livestream/[0-9]+/moderate,/api/user/[0-9a-zA-Z]+/statistics,/api/livestream/search
+# /api/livestream/7581/statistics
+ALPM=/api/livestream/[0-9]+/report,/api/user/[0-9a-zA-Z]+/icon,/api/user/[0-9a-zA-Z]+/livestream,/api/livestream/[0-9]+/ngwords,/api/livestream/[0-9]+/reaction,/api/livestream/[0-9]+/livecomment/[0-9]+/report,/api/livestream/[0-9]+/exit,/api/livestream/[0-9]+/enter,/api/user/[0-9a-zA-Z]+/theme,/api/livestream/[0-9]+/livecomment,/api/livestream/[0-9]+/moderate,/api/user/[0-9a-zA-Z]+/statistics,/api/livestream/search,/api/livestream/[0-9]+/statistics
 
 OUTFORMAT=count,method,uri,min,max,sum,avg,p99
 
