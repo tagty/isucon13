@@ -13,3 +13,12 @@ ALTER TABLE reservation_slots
 
 ALTER TABLE ng_words
 	ADD INDEX idx_livestream_id_user_id (livestream_id, user_id);
+
+ALTER TABLE livestreams
+	ADD INDEX idx_user_id (user_id);
+
+ALTER TABLE livecomments
+	ADD INDEX idx_livestream_id (livestream_id);
+
+ALTER TABLE reactions
+	ADD INDEX idx_livestream_id (livestream_id, created_at);
