@@ -84,7 +84,42 @@ func getLivecommentsHandler(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	query := "SELECT * FROM livecomments WHERE livestream_id = ? ORDER BY created_at DESC"
+	// query := "SELECT * FROM livecomments WHERE livestream_id = ? ORDER BY created_at DESC"
+	// if c.QueryParam("limit") != "" {
+	// 	limit, err := strconv.Atoi(c.QueryParam("limit"))
+	// 	if err != nil {
+	// 		return echo.NewHTTPError(http.StatusBadRequest, "limit query parameter must be integer")
+	// 	}
+	// 	query += fmt.Sprintf(" LIMIT %d", limit)
+	// }
+
+	// livecommentModels := []LivecommentModel{}
+	// err = tx.SelectContext(ctx, &livecommentModels, query, livestreamID)
+	// if errors.Is(err, sql.ErrNoRows) {
+	// 	return c.JSON(http.StatusOK, []*Livecomment{})
+	// }
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomments: "+err.Error())
+	// }
+
+	// livecomments := make([]Livecomment, len(livecommentModels))
+	// for i := range livecommentModels {
+	// 	livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModels[i])
+	// 	if err != nil {
+	// 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
+	// 	}
+
+	// 	livecomments[i] = livecomment
+	// }
+
+	query := `
+	SELECT livecomments.*, livestreams.*, users.*
+	FROM livecomments
+	JOIN livestreams ON livestreams.id = livecomments.livestream_id
+	JOIN users ON users.id = livecomments.user_id
+	WHERE livecomments.livestream_id = ?
+	ORDER BY livecomments.created_at DESC
+	`
 	if c.QueryParam("limit") != "" {
 		limit, err := strconv.Atoi(c.QueryParam("limit"))
 		if err != nil {
@@ -92,24 +127,13 @@ func getLivecommentsHandler(c echo.Context) error {
 		}
 		query += fmt.Sprintf(" LIMIT %d", limit)
 	}
-
-	livecommentModels := []LivecommentModel{}
-	err = tx.SelectContext(ctx, &livecommentModels, query, livestreamID)
+	livecomments := []Livecomment{}
+	err = tx.SelectContext(ctx, &livecomments, query, livestreamID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c.JSON(http.StatusOK, []*Livecomment{})
 	}
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomments: "+err.Error())
-	}
-
-	livecomments := make([]Livecomment, len(livecommentModels))
-	for i := range livecommentModels {
-		livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModels[i])
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
-		}
-
-		livecomments[i] = livecomment
 	}
 
 	if err := tx.Commit(); err != nil {
