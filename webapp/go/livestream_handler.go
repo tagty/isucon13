@@ -183,17 +183,12 @@ func searchLivestreamsHandler(c echo.Context) error {
 	var livestreamModels []*LivestreamModel
 	if c.QueryParam("tag") != "" {
 		// タグによる取得
-		var tagIDList []int
-		if err := tx.SelectContext(ctx, &tagIDList, "SELECT id FROM tags WHERE name = ?", keyTagName); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
-		}
-
-		query, params, err := sqlx.In("SELECT livestream_id FROM livestream_tags WHERE tag_id IN (?) ORDER BY livestream_id DESC", tagIDList)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to construct IN query: "+err.Error())
+		var tagID int
+		if err := tx.GetContext(ctx, &tagID, "SELECT id FROM tags WHERE name = ?", keyTagName); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tag: "+err.Error())
 		}
 		var keyTaggedLivestreamIDs []int64
-		if err := tx.SelectContext(ctx, &keyTaggedLivestreamIDs, query, params...); err != nil {
+		if err := tx.SelectContext(ctx, &keyTaggedLivestreamIDs, "SELECT livestream_id FROM livestream_tags WHERE tag_id = ? ORDER BY livestream_id DESC", tagID); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get keyTaggedLivestreamIDs: "+err.Error())
 		}
 
@@ -206,6 +201,7 @@ func searchLivestreamsHandler(c echo.Context) error {
 				return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
 			}
 		}
+
 	} else {
 		// 検索条件なし
 		query := `SELECT * FROM livestreams ORDER BY id DESC`
