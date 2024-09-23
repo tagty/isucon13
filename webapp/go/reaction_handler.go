@@ -67,10 +67,8 @@ func getReactionsHandler(c echo.Context) error {
 	}
 
 	userIDs := make([]int64, 0)
-	livestreamIDs := make([]int64, 0)
 	for _, reactionModel := range reactionModels {
 		userIDs = append(userIDs, reactionModel.UserID)
-		livestreamIDs = append(livestreamIDs, reactionModel.LivestreamID)
 	}
 
 	users := make(map[int64]User)
@@ -93,24 +91,13 @@ func getReactionsHandler(c echo.Context) error {
 		}
 	}
 
-	livestreams := make(map[int64]Livestream)
-	if len(livestreamIDs) > 0 {
-		livestreamModels := []LivestreamModel{}
-		query, args, err := sqlx.In("SELECT * FROM livestreams WHERE id IN (?)", livestreamIDs)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to build livestream query: "+err.Error())
-		}
-		query = tx.Rebind(query)
-		if err := tx.SelectContext(ctx, &livestreamModels, query, args...); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
-		}
-		for _, livestreamModel := range livestreamModels {
-			livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
-			}
-			livestreams[livestreamModel.ID] = livestream
-		}
+	livestreamModel := LivestreamModel{}
+	if err := tx.GetContext(ctx, &livestreamModel, "SELECT * FROM livestreams WHERE id = ?", livestreamID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to build query for livestreams: "+err.Error())
+	}
+	livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
 	}
 
 	reactions := make([]Reaction, len(reactionModels))
@@ -119,7 +106,7 @@ func getReactionsHandler(c echo.Context) error {
 			ID:         reactionModel.ID,
 			EmojiName:  reactionModel.EmojiName,
 			User:       users[reactionModel.UserID],
-			Livestream: livestreams[reactionModel.LivestreamID],
+			Livestream: livestream,
 			CreatedAt:  reactionModel.CreatedAt,
 		}
 	}
