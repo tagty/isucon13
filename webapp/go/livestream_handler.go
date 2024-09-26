@@ -202,6 +202,20 @@ func searchLivestreamsHandler(c echo.Context) error {
 			}
 		}
 
+		livestreams := make([]Livestream, len(livestreamModels))
+		for i := range livestreamModels {
+			livestream, err := fillLivestreamResponse(ctx, tx, *livestreamModels[i])
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
+			}
+			livestreams[i] = livestream
+		}
+
+		if err := tx.Commit(); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
+		}
+
+		return c.JSON(http.StatusOK, livestreams)
 	} else {
 		// 検索条件なし
 		query := `SELECT * FROM livestreams ORDER BY id DESC`
@@ -216,22 +230,22 @@ func searchLivestreamsHandler(c echo.Context) error {
 		if err := tx.SelectContext(ctx, &livestreamModels, query); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
 		}
-	}
 
-	livestreams := make([]Livestream, len(livestreamModels))
-	for i := range livestreamModels {
-		livestream, err := fillLivestreamResponse(ctx, tx, *livestreamModels[i])
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
+		livestreams := make([]Livestream, len(livestreamModels))
+		for i := range livestreamModels {
+			livestream, err := fillLivestreamResponse(ctx, tx, *livestreamModels[i])
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
+			}
+			livestreams[i] = livestream
 		}
-		livestreams[i] = livestream
-	}
 
-	if err := tx.Commit(); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
-	}
+		if err := tx.Commit(); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
+		}
 
-	return c.JSON(http.StatusOK, livestreams)
+		return c.JSON(http.StatusOK, livestreams)
+	}
 }
 
 func getMyLivestreamsHandler(c echo.Context) error {
