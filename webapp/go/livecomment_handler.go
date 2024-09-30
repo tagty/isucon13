@@ -285,6 +285,21 @@ func postLivecommentHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
 	}
 
+	// livestreamのtipsにlivecommentのtipを加算
+	if livecomment.Tip > 0 {
+		tx, err := dbConn.BeginTxx(ctx, nil)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to begin transaction: "+err.Error())
+		}
+		defer tx.Rollback()
+		if _, err := tx.ExecContext(ctx, "UPDATE livestreams SET tips = tips + ? WHERE id = ?", livecomment.Tip, livestreamID); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to update livestream tips: "+err.Error())
+		}
+		if err := tx.Commit(); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
+		}
+	}
+
 	return c.JSON(http.StatusCreated, livecomment)
 }
 
