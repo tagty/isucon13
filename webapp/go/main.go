@@ -115,6 +115,17 @@ func initializeHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to initialize: "+err.Error())
 	}
 
+	// reactionsをloopして、livestream_idごとにreactions_countを更新する
+	_, err := dbConn.Exec("UPDATE livestreams l SET reactions_count = (SELECT COUNT(*) FROM reactions r WHERE r.livestream_id = l.id)")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update reactions_count: "+err.Error())
+	}
+	// livestreamsをloopして、user_idごとにreactions_countを更新する
+	_, err = dbConn.Exec("UPDATE users u SET reactions_count = (SELECT IFNULL(SUM(reactions_count), 0) FROM livestreams l WHERE l.user_id = u.id)")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update reactions_count: "+err.Error())
+	}
+
 	c.Request().Header.Add("Content-Type", "application/json;charset=utf-8")
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "golang",
