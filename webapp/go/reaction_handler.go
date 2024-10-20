@@ -158,6 +158,20 @@ func postReactionHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to insert reaction: "+err.Error())
 	}
 
+	// livestreamsのreactions_countをインクリメント
+	if _, err := tx.ExecContext(ctx, "UPDATE livestreams SET reactions_count = reactions_count + 1 WHERE id = ?", livestreamID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to increment reactions_count: "+err.Error())
+	}
+	// livestreamsを取得
+	livestreamModel := LivestreamModel{}
+	if err := tx.GetContext(ctx, &livestreamModel, "SELECT * FROM livestreams WHERE id = ?", livestreamID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestream: "+err.Error())
+	}
+	// usersのreactions_countをインクリメント
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET reactions_count = reactions_count + 1 WHERE id = ?", livestreamModel.UserID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to increment reactions_count: "+err.Error())
+	}
+
 	reactionID, err := result.LastInsertId()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get last inserted reaction id: "+err.Error())
