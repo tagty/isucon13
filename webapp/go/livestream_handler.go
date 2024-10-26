@@ -286,14 +286,19 @@ func searchLivestreamsHandler(c echo.Context) error {
 		usersByID[user.ID] = user
 	}
 
-	// Construct the response
-	livestreams := make([]Livestream, len(livestreamModels))
-	for i, livestreamModel := range livestreamModels {
-		ownerModel := usersByID[livestreamModel.UserID]
-		owner, err := fillUserResponse(ctx, tx, ownerModel)
+	owners := make(map[int64]User)
+	for _, user := range users {
+		owner, err := fillUserResponse(ctx, tx, user)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill user: "+err.Error())
 		}
+		owners[user.ID] = owner
+	}
+
+	// Construct the response
+	livestreams := make([]Livestream, len(livestreamModels))
+	for i, livestreamModel := range livestreamModels {
+		owner := owners[livestreamModel.UserID]
 
 		tagIDs := tagsByLivestreamID[livestreamModel.ID]
 		livestreamTags := make([]Tag, len(tagIDs))
