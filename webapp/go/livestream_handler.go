@@ -69,6 +69,12 @@ type ReservationSlotModel struct {
 	EndAt   int64 `db:"end_at" json:"end_at"`
 }
 
+type IconModel struct {
+	ID       int64  `db:"id" json:"id"`
+	UserID   int64  `db:"user_id" json:"user_id"`
+	IconHash string `db:"icon_hash" json:"icon_hash"`
+}
+
 func reserveLivestreamHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 	defer c.Request().Body.Close()
@@ -286,12 +292,64 @@ func searchLivestreamsHandler(c echo.Context) error {
 		usersByID[user.ID] = user
 	}
 
+	// Fetch all themes for the users in one query
+	var themes []ThemeModel
+	query, args, err = sqlx.In("SELECT * FROM themes WHERE user_id IN (?)", userIDs)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to construct IN query for themes: "+err.Error())
+	}
+	query = tx.Rebind(query)
+	if err := tx.SelectContext(ctx, &themes, query, args...); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get themes: "+err.Error())
+	}
+
+	// Map themes by user ID for quick lookup
+	themesByUserID := make(map[int64][]ThemeModel)
+	for _, theme := range themes {
+		themesByUserID[theme.UserID] = append(themesByUserID[theme.UserID], theme)
+	}
+
+	// Fetch all icons for the users in one query
+	var icons []IconModel
+	query, args, err = sqlx.In("SELECT id, user_id, icon_hash FROM icons WHERE user_id IN (?)", userIDs)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to construct IN query for icons: "+err.Error())
+	}
+	query = tx.Rebind(query)
+	if err := tx.SelectContext(ctx, &icons, query, args...); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get icons: "+err.Error())
+	}
+
+	// Map icons by user ID for quick lookup
+	iconsByUserID := make(map[int64]IconModel)
+	for _, icon := range icons {
+		iconsByUserID[icon.UserID] = icon
+	}
+
 	owners := make(map[int64]User)
 	for _, user := range users {
-		owner, err := fillUserResponse(ctx, tx, user)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill user: "+err.Error())
+		theme := Theme{}
+		if userThemes, ok := themesByUserID[user.ID]; ok && len(userThemes) > 0 {
+			theme = Theme{
+				ID:       userThemes[0].ID,
+				DarkMode: userThemes[0].DarkMode,
+			}
 		}
+
+		iconHash := "d9f8294e9d895f81ce62e73dc7d5dff862a4fa40bd4e0fecf53f7526a8edcac0"
+		if icon, ok := iconsByUserID[user.ID]; ok {
+			iconHash = icon.IconHash
+		}
+
+		owner := User{
+			ID:          user.ID,
+			Name:        user.Name,
+			DisplayName: user.DisplayName,
+			Description: user.Description,
+			Theme:       theme,
+			IconHash:    iconHash,
+		}
+
 		owners[user.ID] = owner
 	}
 
