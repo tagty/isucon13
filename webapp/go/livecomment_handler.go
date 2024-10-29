@@ -264,10 +264,10 @@ func postLivecommentHandler(c echo.Context) error {
 	}
 	livecommentModel.ID = livecommentID
 
-	livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModel)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livecomment: "+err.Error())
-	}
+	// livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModel)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livecomment: "+err.Error())
+	// }
 
 	if req.Tip > 0 {
 		// livestreamのtipにlivecommentのtipを加算
