@@ -44,6 +44,12 @@ nginx-reload:
 nginx-restart:
 	ssh isu13-1 "sudo systemctl restart nginx.service"
 
+powerdns-deploy:
+	ssh isu13-1 "sudo dd of=/etc/powerdns/pdns.conf" < ./etc/powerdns/pdns.conf
+
+powerdns-restart:
+	ssh isu13-1 "sudo systemctl restart pdns.service"
+
 .PHONY: bench
 bench:
 	ssh isucon13-bench " \
