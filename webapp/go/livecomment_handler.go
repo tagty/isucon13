@@ -284,7 +284,7 @@ func postLivecommentHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
 	}
 
-	return c.JSON(http.StatusCreated, livecomment)
+	return c.JSON(http.StatusCreated, livecommentModel)
 }
 
 func reportLivecommentHandler(c echo.Context) error {
