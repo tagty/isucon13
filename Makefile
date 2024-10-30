@@ -22,14 +22,15 @@ restart:
 
 mysql-deploy:
 	ssh isu13-1 "sudo dd of=/etc/mysql/mysql.conf.d/mysqld.cnf" < ./etc/mysql/mysql.conf.d/mysqld.cnf
-	ssh isucon13-2 "sudo dd of=/etc/mysql/mysql.conf.d/mysqld.cnf" < ./etc/mysql/mysql.conf.d/mysqld.cnf
-	ssh isucon13-3 "sudo dd of=/etc/mysql/mysql.conf.d/mysqld.cnf" < ./etc/mysql/mysql.conf.d/mysqld.cnf
+	ssh isu13-3 "sudo dd of=/etc/mysql/mysql.conf.d/mysqld.cnf" < ./etc/mysql/mysql.conf.d/mysqld.cnf
 
 mysql-rotate:
 	ssh isu13-1 "sudo rm -f /var/log/mysql/mysql-slow.log"
+	ssh isu13-3 "sudo rm -f /var/log/mysql/mysql-slow.log"
 
 mysql-restart:
 	ssh isu13-1 "sudo systemctl restart mysql.service"
+	ssh isu13-3 "sudo systemctl restart mysql.service"
 
 nginx-deploy:
 	ssh isu13-1 "sudo dd of=/etc/nginx/nginx.conf" < ./etc/nginx/nginx.conf
@@ -49,6 +50,9 @@ powerdns-deploy:
 
 powerdns-restart:
 	ssh isu13-1 "sudo systemctl restart pdns.service"
+
+env-deploy:
+	ssh isu13-1 "sudo dd of=/home/isucon/env.sh" < ./env.sh
 
 .PHONY: bench
 bench:
