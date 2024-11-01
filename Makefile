@@ -5,9 +5,13 @@ deploy:
 		git fetch; \
 		git checkout $(BRANCH); \
 		git reset --hard origin/$(BRANCH)"
+	scp -r ./webapp/go isu13-2:/home/isucon/webapp/
 
 build:
 	ssh isu13-1 " \
+		cd /home/isucon/webapp/go; \
+		/home/isucon/local/golang/bin/go build -o isupipe"
+	ssh isu13-2 " \
 		cd /home/isucon/webapp/go; \
 		/home/isucon/local/golang/bin/go build -o isupipe"
 
@@ -19,6 +23,7 @@ go-deploy-dir:
 
 restart:
 	ssh isu13-1 "sudo systemctl restart isupipe-go.service"
+	ssh isu13-2 "sudo systemctl restart isupipe-go.service"
 
 mysql-deploy:
 	ssh isu13-1 "sudo dd of=/etc/mysql/mysql.conf.d/mysqld.cnf" < ./etc/mysql/mysql.conf.d/mysqld.cnf
@@ -51,8 +56,15 @@ powerdns-deploy:
 powerdns-restart:
 	ssh isu13-1 "sudo systemctl restart pdns.service"
 
+dnsdist-deploy:
+	ssh isu13-1 "sudo dd of=/etc/dnsdist/dnsdist.conf" < ./etc/dnsdist/dnsdist.conf
+
+dnsdist-restart:
+	ssh isu13-1 "sudo systemctl restart dnsdist.service"
+
 env-deploy:
 	ssh isu13-1 "sudo dd of=/home/isucon/env.sh" < ./env.sh
+	ssh isu13-2 "sudo dd of=/home/isucon/env.sh" < ./env.sh
 
 .PHONY: bench
 bench:
@@ -60,8 +72,11 @@ bench:
 		cd /home/isucon/bench; \
 		./bench -target-addr 172.31.41.209:443"
 
-pt-query-digest:
+pt-query-digest-1:
 	ssh isu13-1 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
+
+pt-query-digest-3:
+	ssh isu13-3 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
 
 ALPSORT=sum
 # /api/user/mikakosasaki0/icon
@@ -87,7 +102,7 @@ alp:
 
 .PHONY: pprof
 pprof:
-	ssh isu13-1 " \
+	ssh isu13-2 " \
 		/home/isucon/local/golang/bin/go tool pprof -seconds=120 /home/isucon/webapp/go/isupipe http://localhost:6060/debug/pprof/profile"
 
 pprof-show:
