@@ -316,9 +316,47 @@ func postLivecommentHandler(c echo.Context) error {
 	}
 	livecommentModel.ID = livecommentID
 
-	livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModel)
+	livecommentModels := []LivecommentModel{}
+	err = tx.SelectContext(ctx, &livecommentModels, "SELECT * FROM livecomments WHERE id = ?", livecommentModel.ID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livecomment: "+err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomments: "+err.Error())
+	}
+
+	userIDs := make([]int64, len(livecommentModels))
+	for i, livecommentModel := range livecommentModels {
+		userIDs[i] = livecommentModel.UserID
+	}
+	users := make(map[int64]User)
+	if len(userIDs) > 0 {
+		query, args, err := sqlx.In("SELECT * FROM users WHERE id IN (?)", userIDs)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to build query for users: "+err.Error())
+		}
+		query = tx.Rebind(query)
+		var userModels []UserModel
+		if err := tx.SelectContext(ctx, &userModels, query, args...); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users: "+err.Error())
+		}
+
+		for _, user := range userModels {
+			users[user.ID] = User{
+				ID:          user.ID,
+				Name:        user.Name,
+				DisplayName: user.DisplayName,
+				Description: user.Description,
+			}
+		}
+	}
+
+	livecomments := make([]Livecomment, len(livecommentModels))
+	for i, livecommentModel := range livecommentModels {
+		livecomments[i] = Livecomment{
+			ID:        livecommentModel.ID,
+			User:      users[livecommentModel.UserID],
+			Comment:   livecommentModel.Comment,
+			Tip:       livecommentModel.Tip,
+			CreatedAt: livecommentModel.CreatedAt,
+		}
 	}
 
 	if req.Tip > 0 {
