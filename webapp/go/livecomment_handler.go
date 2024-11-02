@@ -316,9 +316,27 @@ func postLivecommentHandler(c echo.Context) error {
 	}
 	livecommentModel.ID = livecommentID
 
-	livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModel)
+	commentOwnerModel := UserModel{}
+	if err := tx.GetContext(ctx, &commentOwnerModel, "SELECT * FROM users WHERE id = ?", livecommentModel.UserID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user: "+err.Error())
+	}
+	commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livecomment: "+err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill user response: "+err.Error())
+	}
+
+	livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
+	}
+
+	livecomment := Livecomment{
+		ID:         livecommentModel.ID,
+		User:       commentOwner,
+		Livestream: livestream,
+		Comment:    livecommentModel.Comment,
+		Tip:        livecommentModel.Tip,
+		CreatedAt:  livecommentModel.CreatedAt,
 	}
 
 	if req.Tip > 0 {
