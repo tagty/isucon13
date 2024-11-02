@@ -106,9 +106,9 @@ pprof:
 		/home/isucon/local/golang/bin/go tool pprof -seconds=120 /home/isucon/webapp/go/isupipe http://localhost:6060/debug/pprof/profile"
 
 pprof-show:
-	$(eval latest := $(shell ssh isu13-1 "ls -rt ~/pprof/ | tail -n 1"))
-	scp isu13-1:~/pprof/$(latest) ./pprof
+	$(eval latest := $(shell ssh isu13-2 "ls -rt ~/pprof/ | tail -n 1"))
+	scp isu13-2:~/pprof/$(latest) ./pprof
 	go tool pprof -http=":1080" ./pprof/$(latest)
 
 pprof-kill:
-	ssh isu13-1 "pgrep -f 'pprof' | xargs kill;"
+	ssh isu13-2 "pgrep -f 'pprof' | xargs kill;"

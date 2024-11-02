@@ -325,9 +325,42 @@ func postLivecommentHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill user response: "+err.Error())
 	}
 
-	livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
+	ownerModel := UserModel{}
+	if err := tx.GetContext(ctx, &ownerModel, "SELECT * FROM users WHERE id = ?", livestreamModel.UserID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user: "+err.Error())
+	}
+	owner, err := fillUserResponse(ctx, tx, ownerModel)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill user response: "+err.Error())
+	}
+
+	var tagIDs []int64
+	if err := tx.SelectContext(ctx, &tagIDs, "SELECT tag_id FROM livestream_tags WHERE livestream_id = ?", livestreamModel.ID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
+	}
+
+	tags := make([]Tag, len(tagIDs))
+	if len(tagIDs) > 0 {
+		query, args, err := sqlx.In("SELECT * FROM tags WHERE id IN (?)", tagIDs)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to build query for tags: "+err.Error())
+		}
+		query = tx.Rebind(query)
+		if err := tx.SelectContext(ctx, &tags, query, args...); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
+		}
+	}
+
+	livestream := Livestream{
+		ID:           livestreamModel.ID,
+		Owner:        owner,
+		Title:        livestreamModel.Title,
+		Tags:         tags,
+		Description:  livestreamModel.Description,
+		PlaylistUrl:  livestreamModel.PlaylistUrl,
+		ThumbnailUrl: livestreamModel.ThumbnailUrl,
+		StartAt:      livestreamModel.StartAt,
+		EndAt:        livestreamModel.EndAt,
 	}
 
 	livecomment := Livecomment{
